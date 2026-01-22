@@ -123,8 +123,8 @@ import '../styles/global.css';
         let excelData = [];
         let stats = { total: 0, success: 0, error: 0, pending: 0 };
 
-        // API Configuration
-        const API_URL = 'https://fusesakti.kemenkeu.go.id/sakti/backend/asset-tetap/assetTrx/savePengembangan';
+        // API Configuration - Use proxy to bypass CORS
+        const API_URL = '/api/proxy';
 
         // Fixed request body values
         const FIXED_BODY = {
@@ -238,7 +238,7 @@ import '../styles/global.css';
             previewSection.style.display = 'block';
         }
 
-        function getAuthHeaders() {
+        function getAuthCredentials() {
             const sessionId = document.getElementById('sessionId').value.trim();
             const tokenId = document.getElementById('tokenId').value.trim();
             const timestamp = document.getElementById('timestamp').value.trim();
@@ -247,30 +247,12 @@ import '../styles/global.css';
                 return null;
             }
 
-            return {
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,id;q=0.7',
-                'Connection': 'keep-alive',
-                'Content-Type': 'application/json',
-                'Host': 'fusesakti.kemenkeu.go.id',
-                'Origin': 'https://sakti.kemenkeu.go.id',
-                'Referer': 'https://sakti.kemenkeu.go.id/',
-                'SAKTI_SESSION_ID': sessionId,
-                'SAKTI_TIMESTAMP': timestamp,
-                'SAKTI_TOKEN_ID': tokenId,
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-site',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
-                'sec-ch-ua': '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"'
-            };
+            return { sessionId, tokenId, timestamp };
         }
 
         async function startBulkUpload() {
-            const headers = getAuthHeaders();
-            if (!headers) {
+            const auth = getAuthCredentials();
+            if (!auth) {
                 alert('Harap isi semua field autentikasi!');
                 return;
             }
@@ -297,7 +279,7 @@ import '../styles/global.css';
                 addLog('pending', '[' + rowNum + '/' + excelData.length + '] Mengupload: ' + row.kodeBarang + ' (' + row.noAwal + '-' + row.noAkhir + ')...');
 
                 try {
-                    const result = await uploadRow(row, headers);
+                    const result = await uploadRow(row, auth);
                     stats.success++;
                     stats.pending--;
                     addLog('success', '[' + rowNum + '/' + excelData.length + '] ✅ Sukses: ' + row.kodeBarang + ' (' + row.noAwal + '-' + row.noAkhir + ')');
@@ -318,20 +300,20 @@ import '../styles/global.css';
             startUpload.textContent = '🚀 Mulai Upload';
         }
 
-        async function uploadRow(row, headers) {
+        async function uploadRow(row, auth) {
             const body = Object.assign({}, FIXED_BODY, {
                 kodeUakpb: String(row.kodeUakpb),
                 kodeBarang: String(row.kodeBarang),
                 noAwal: Number(row.noAwal),
                 noAkhir: Number(row.noAkhir),
-                createdDateTime: new Date().toISOString()
+                createdDateTime: new Date().toISOString(),
+                _headers: auth
             });
 
             const response = await fetch(API_URL, {
                 method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(body),
-                credentials: 'include'
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
             });
 
             if (!response.ok) {
