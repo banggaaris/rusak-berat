@@ -7,15 +7,21 @@ import '../styles/global.css';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAKTI Bulk Upload - Pengembangan Aset</title>
+    <title>SAKTI Bulk Tool - Pengembangan Aset</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js" is:inline></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🚀 SAKTI Bulk Upload</h1>
+            <h1>🚀 SAKTI Bulk Tool</h1>
             <p class="subtitle">Pengembangan Aset Tetap</p>
         </header>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="upload">📤 Upload Pengembangan</button>
+            <button class="tab" data-tab="delete">🗑️ Delete Pengembangan</button>
+        </div>
 
         <!-- Auth Section -->
         <section class="card auth-section">
@@ -37,39 +43,73 @@ import '../styles/global.css';
             </div>
         </section>
 
-        <!-- Upload Section -->
-        <section class="card upload-section">
-            <h2>📁 Upload Excel</h2>
-            <p class="info-text">Format Excel: <code>kodeUakpb</code>, <code>kodeBarang</code>, <code>noAwal</code>, <code>noAkhir</code></p>
-            <div class="upload-area" id="uploadArea">
-                <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
-                <div class="upload-icon">📤</div>
-                <p>Drag & drop file Excel atau <span class="link">klik untuk memilih</span></p>
-                <p class="file-name" id="fileName"></p>
-            </div>
-        </section>
+        <!-- Upload Tab Content -->
+        <div id="uploadTab" class="tab-content active">
+            <section class="card upload-section">
+                <h2>📁 Upload Excel - Pengembangan</h2>
+                <p class="info-text">Format Excel: <code>kodeUakpb</code>, <code>kodeBarang</code>, <code>noAwal</code>, <code>noAkhir</code>, <code>tglPerolehan</code></p>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+                    <div class="upload-icon">📤</div>
+                    <p>Drag & drop file Excel atau <span class="link">klik untuk memilih</span></p>
+                    <p class="file-name" id="fileName"></p>
+                </div>
+            </section>
 
-        <!-- Preview Section -->
-        <section class="card preview-section" id="previewSection" style="display: none;">
-            <h2>📋 Preview Data (<span id="dataCount">0</span> baris)</h2>
-            <div class="table-container">
-                <table id="previewTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>kodeUakpb</th>
-                            <th>kodeBarang</th>
-                            <th>noAwal</th>
-                            <th>noAkhir</th>
-                        </tr>
-                    </thead>
-                    <tbody id="previewBody"></tbody>
-                </table>
-            </div>
-            <button type="button" id="startUpload" class="btn-primary">
-                🚀 Mulai Upload
-            </button>
-        </section>
+            <section class="card preview-section" id="previewSection" style="display: none;">
+                <h2>📋 Preview Data (<span id="dataCount">0</span> baris)</h2>
+                <div class="table-container">
+                    <table id="previewTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>kodeUakpb</th>
+                                <th>kodeBarang</th>
+                                <th>noAwal</th>
+                                <th>noAkhir</th>
+                                <th>tglPerolehan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+                <button type="button" id="startUpload" class="btn-primary">
+                    🚀 Mulai Upload
+                </button>
+            </section>
+        </div>
+
+        <!-- Delete Tab Content -->
+        <div id="deleteTab" class="tab-content">
+            <section class="card upload-section">
+                <h2>📁 Upload Excel - Delete</h2>
+                <p class="info-text">Format Excel: <code>object</code> (ID object yang akan dihapus)</p>
+                <div class="upload-area" id="deleteUploadArea">
+                    <input type="file" id="deleteFileInput" accept=".xlsx,.xls" hidden>
+                    <div class="upload-icon">🗑️</div>
+                    <p>Drag & drop file Excel atau <span class="link">klik untuk memilih</span></p>
+                    <p class="file-name" id="deleteFileName"></p>
+                </div>
+            </section>
+
+            <section class="card preview-section" id="deletePreviewSection" style="display: none;">
+                <h2>📋 Preview Data (<span id="deleteDataCount">0</span> baris)</h2>
+                <div class="table-container">
+                    <table id="deletePreviewTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>object</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deletePreviewBody"></tbody>
+                    </table>
+                </div>
+                <button type="button" id="startDelete" class="btn-danger">
+                    🗑️ Mulai Delete
+                </button>
+            </section>
+        </div>
 
         <!-- Progress Dashboard -->
         <section class="card dashboard-section" id="dashboardSection" style="display: none;">
@@ -97,9 +137,7 @@ import '../styles/global.css';
             </div>
             <p class="progress-text"><span id="progressPercent">0</span>% selesai</p>
             
-            <div class="log-container" id="logContainer">
-                <!-- Log entries will be added here -->
-            </div>
+            <div class="log-container" id="logContainer"></div>
         </section>
 
         <footer>
@@ -108,25 +146,13 @@ import '../styles/global.css';
     </div>
 
     <script is:inline>
-        // DOM Elements
-        const fileInput = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
-        const fileName = document.getElementById('fileName');
-        const previewSection = document.getElementById('previewSection');
-        const previewBody = document.getElementById('previewBody');
-        const dataCount = document.getElementById('dataCount');
-        const startUpload = document.getElementById('startUpload');
-        const dashboardSection = document.getElementById('dashboardSection');
-        const generateTimestampBtn = document.getElementById('generateTimestamp');
-
         // State
-        let excelData = [];
+        let currentTab = 'upload';
+        let uploadData = [];
+        let deleteData = [];
         let stats = { total: 0, success: 0, error: 0, pending: 0 };
 
-        // API Configuration - Use proxy to bypass CORS
-        const API_URL = '/api/proxy';
-
-        // Fixed request body values
+        // Fixed request body values for upload
         const FIXED_BODY = {
             kodeJenisTransaksi: "203",
             statusPersetujuan: 1,
@@ -135,182 +161,264 @@ import '../styles/global.css';
             kodeKondisi: 3,
             tahunAnggaran: 2025,
             tglPembukuan: "2025-12-30T17:00:00.000Z",
-            tglPerolehan: "2018-04-23T17:00:00.000Z",
             tglDasarMutasi: "2025-12-30T17:00:00.000Z",
             noDasarMutasi: "SK NOMOR 77 TAHUN 2025"
         };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
+            setupTabs();
+            setupUploadEvents();
+            setupDeleteEvents();
             generateNewTimestamp();
         });
 
-        function setupEventListeners() {
+        // Tab switching
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentTab = tab.dataset.tab;
+                    document.getElementById(currentTab + 'Tab').classList.add('active');
+                });
+            });
+        }
+
+        // Upload Events
+        function setupUploadEvents() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
             uploadArea.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', handleFileSelect);
-
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('dragover');
-            });
-
+            fileInput.addEventListener('change', (e) => handleUploadFile(e.target.files[0]));
+            
+            uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadArea.classList.remove('dragover');
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    handleFile(files[0]);
-                }
+                if (e.dataTransfer.files.length > 0) handleUploadFile(e.dataTransfer.files[0]);
             });
 
-            generateTimestampBtn.addEventListener('click', generateNewTimestamp);
-            startUpload.addEventListener('click', startBulkUpload);
+            document.getElementById('generateTimestamp').addEventListener('click', generateNewTimestamp);
+            document.getElementById('startUpload').addEventListener('click', startBulkUpload);
+        }
+
+        // Delete Events
+        function setupDeleteEvents() {
+            const deleteArea = document.getElementById('deleteUploadArea');
+            const deleteInput = document.getElementById('deleteFileInput');
+
+            deleteArea.addEventListener('click', () => deleteInput.click());
+            deleteInput.addEventListener('change', (e) => handleDeleteFile(e.target.files[0]));
+            
+            deleteArea.addEventListener('dragover', (e) => { e.preventDefault(); deleteArea.classList.add('dragover'); });
+            deleteArea.addEventListener('dragleave', () => deleteArea.classList.remove('dragover'));
+            deleteArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                deleteArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) handleDeleteFile(e.dataTransfer.files[0]);
+            });
+
+            document.getElementById('startDelete').addEventListener('click', startBulkDelete);
         }
 
         function generateNewTimestamp() {
             document.getElementById('timestamp').value = Date.now().toString();
         }
 
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) handleFile(file);
-        }
-
-        function handleFile(file) {
-            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+        // Handle Upload File
+        function handleUploadFile(file) {
+            if (!file || !file.name.match(/\.(xlsx|xls)$/i)) {
                 alert('Harap upload file Excel (.xlsx atau .xls)');
                 return;
             }
 
-            fileName.textContent = '📄 ' + file.name;
+            document.getElementById('fileName').textContent = '📄 ' + file.name;
 
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
-                    if (jsonData.length === 0) {
-                        alert('File Excel kosong!');
-                        return;
-                    }
+                    if (jsonData.length === 0) { alert('File Excel kosong!'); return; }
 
-                    const requiredCols = ['kodeUakpb', 'kodeBarang', 'noAwal', 'noAkhir'];
-                    const firstRow = jsonData[0];
-                    const missingCols = requiredCols.filter(col => !(col in firstRow));
+                    const requiredCols = ['kodeUakpb', 'kodeBarang', 'noAwal', 'noAkhir', 'tglPerolehan'];
+                    const missingCols = requiredCols.filter(col => !(col in jsonData[0]));
+                    if (missingCols.length > 0) { alert('Kolom tidak ditemukan: ' + missingCols.join(', ')); return; }
 
-                    if (missingCols.length > 0) {
-                        alert('Kolom tidak ditemukan: ' + missingCols.join(', '));
-                        return;
-                    }
-
-                    excelData = jsonData;
-                    renderPreview();
+                    uploadData = jsonData;
+                    renderUploadPreview();
                 } catch (error) {
-                    alert('Gagal membaca file Excel: ' + error.message);
+                    alert('Gagal membaca file: ' + error.message);
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function renderPreview() {
-            previewBody.innerHTML = '';
-            dataCount.textContent = excelData.length;
+        // Handle Delete File
+        function handleDeleteFile(file) {
+            if (!file || !file.name.match(/\.(xlsx|xls)$/i)) {
+                alert('Harap upload file Excel (.xlsx atau .xls)');
+                return;
+            }
 
-            excelData.forEach((row, index) => {
+            document.getElementById('deleteFileName').textContent = '📄 ' + file.name;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                    if (jsonData.length === 0) { alert('File Excel kosong!'); return; }
+                    if (!('object' in jsonData[0])) { alert('Kolom "object" tidak ditemukan!'); return; }
+
+                    deleteData = jsonData;
+                    renderDeletePreview();
+                } catch (error) {
+                    alert('Gagal membaca file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderUploadPreview() {
+            const tbody = document.getElementById('previewBody');
+            tbody.innerHTML = '';
+            document.getElementById('dataCount').textContent = uploadData.length;
+
+            uploadData.forEach((row, i) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td>' + (index + 1) + '</td>' +
-                    '<td>' + (row.kodeUakpb || '') + '</td>' +
-                    '<td>' + (row.kodeBarang || '') + '</td>' +
-                    '<td>' + (row.noAwal || '') + '</td>' +
-                    '<td>' + (row.noAkhir || '') + '</td>';
-                previewBody.appendChild(tr);
+                tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + (row.kodeUakpb || '') + '</td><td>' + (row.kodeBarang || '') + '</td><td>' + (row.noAwal || '') + '</td><td>' + (row.noAkhir || '') + '</td><td>' + (row.tglPerolehan || '') + '</td>';
+                tbody.appendChild(tr);
             });
 
-            previewSection.style.display = 'block';
+            document.getElementById('previewSection').style.display = 'block';
+        }
+
+        function renderDeletePreview() {
+            const tbody = document.getElementById('deletePreviewBody');
+            tbody.innerHTML = '';
+            document.getElementById('deleteDataCount').textContent = deleteData.length;
+
+            deleteData.forEach((row, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + (row.object || '') + '</td>';
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('deletePreviewSection').style.display = 'block';
         }
 
         function getAuthCredentials() {
             const sessionId = document.getElementById('sessionId').value.trim();
             const tokenId = document.getElementById('tokenId').value.trim();
             const timestamp = document.getElementById('timestamp').value.trim();
-
-            if (!sessionId || !tokenId || !timestamp) {
-                return null;
-            }
-
+            if (!sessionId || !tokenId || !timestamp) return null;
             return { sessionId, tokenId, timestamp };
         }
 
+        // Bulk Upload
         async function startBulkUpload() {
             const auth = getAuthCredentials();
-            if (!auth) {
-                alert('Harap isi semua field autentikasi!');
-                return;
-            }
+            if (!auth) { alert('Harap isi semua field autentikasi!'); return; }
+            if (uploadData.length === 0) { alert('Tidak ada data untuk diupload!'); return; }
 
-            if (excelData.length === 0) {
-                alert('Tidak ada data untuk diupload!');
-                return;
-            }
+            showDashboard(uploadData.length);
+            document.getElementById('startUpload').disabled = true;
+            document.getElementById('startUpload').textContent = '⏳ Uploading...';
 
-            dashboardSection.style.display = 'block';
-            startUpload.disabled = true;
-            startUpload.textContent = '⏳ Uploading...';
+            addLog('info', 'Memulai upload ' + uploadData.length + ' data...');
 
-            stats = { total: excelData.length, success: 0, error: 0, pending: excelData.length };
-            updateStats();
-            clearLogs();
-
-            addLog('info', 'Memulai upload ' + excelData.length + ' data...');
-
-            for (let i = 0; i < excelData.length; i++) {
-                const row = excelData[i];
-                const rowNum = i + 1;
-
-                addLog('pending', '[' + rowNum + '/' + excelData.length + '] Mengupload: ' + row.kodeBarang + ' (' + row.noAwal + '-' + row.noAkhir + ')...');
+            for (let i = 0; i < uploadData.length; i++) {
+                const row = uploadData[i];
+                addLog('pending', '[' + (i + 1) + '/' + uploadData.length + '] Mengupload: ' + row.kodeBarang + '...');
 
                 try {
-                    const result = await uploadRow(row, auth);
+                    await uploadRow(row, auth);
                     stats.success++;
-                    stats.pending--;
-                    addLog('success', '[' + rowNum + '/' + excelData.length + '] ✅ Sukses: ' + row.kodeBarang + ' (' + row.noAwal + '-' + row.noAkhir + ')');
+                    addLog('success', '[' + (i + 1) + '/' + uploadData.length + '] ✅ Sukses: ' + row.kodeBarang);
                 } catch (error) {
                     stats.error++;
-                    stats.pending--;
-                    addLog('error', '[' + rowNum + '/' + excelData.length + '] ❌ Gagal: ' + row.kodeBarang + ' - ' + error.message);
+                    addLog('error', '[' + (i + 1) + '/' + uploadData.length + '] ❌ Gagal: ' + row.kodeBarang + ' - ' + error.message);
                 }
 
-                updateStats();
-                updateProgress();
-
+                stats.pending--;
+                updateDashboard();
                 await sleep(100);
             }
 
             addLog('info', 'Upload selesai! Sukses: ' + stats.success + ', Gagal: ' + stats.error);
-            startUpload.disabled = false;
-            startUpload.textContent = '🚀 Mulai Upload';
+            document.getElementById('startUpload').disabled = false;
+            document.getElementById('startUpload').textContent = '🚀 Mulai Upload';
+        }
+
+        // Bulk Delete
+        async function startBulkDelete() {
+            const auth = getAuthCredentials();
+            if (!auth) { alert('Harap isi semua field autentikasi!'); return; }
+            if (deleteData.length === 0) { alert('Tidak ada data untuk dihapus!'); return; }
+
+            // Confirm once before starting
+            if (!confirm('⚠️ PERINGATAN!\n\nAnda akan menghapus ' + deleteData.length + ' data.\nAksi ini tidak dapat dibatalkan.\n\nLanjutkan?')) {
+                return;
+            }
+
+            showDashboard(deleteData.length);
+            document.getElementById('startDelete').disabled = true;
+            document.getElementById('startDelete').textContent = '⏳ Deleting...';
+
+            addLog('info', 'Memulai delete ' + deleteData.length + ' data...');
+
+            for (let i = 0; i < deleteData.length; i++) {
+                const row = deleteData[i];
+                addLog('pending', '[' + (i + 1) + '/' + deleteData.length + '] Menghapus object: ' + row.object + '...');
+
+                try {
+                    await deleteRow(row, auth);
+                    stats.success++;
+                    addLog('success', '[' + (i + 1) + '/' + deleteData.length + '] ✅ Sukses hapus: ' + row.object);
+                } catch (error) {
+                    stats.error++;
+                    addLog('error', '[' + (i + 1) + '/' + deleteData.length + '] ❌ Gagal: ' + row.object + ' - ' + error.message);
+                }
+
+                stats.pending--;
+                updateDashboard();
+                await sleep(100);
+            }
+
+            addLog('info', 'Delete selesai! Sukses: ' + stats.success + ', Gagal: ' + stats.error);
+            document.getElementById('startDelete').disabled = false;
+            document.getElementById('startDelete').textContent = '🗑️ Mulai Delete';
         }
 
         async function uploadRow(row, auth) {
+            let tglPerolehan = row.tglPerolehan;
+            if (typeof tglPerolehan === 'number') {
+                const excelEpoch = new Date(1899, 11, 30);
+                tglPerolehan = new Date(excelEpoch.getTime() + tglPerolehan * 86400000).toISOString();
+            } else if (typeof tglPerolehan === 'string') {
+                tglPerolehan = new Date(tglPerolehan).toISOString();
+            }
+
             const body = Object.assign({}, FIXED_BODY, {
                 kodeUakpb: String(row.kodeUakpb),
                 kodeBarang: String(row.kodeBarang),
                 noAwal: Number(row.noAwal),
                 noAkhir: Number(row.noAkhir),
+                tglPerolehan: tglPerolehan,
                 createdDateTime: new Date().toISOString(),
                 _headers: auth
             });
 
-            const response = await fetch(API_URL, {
+            const response = await fetch('/api/proxy', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -320,18 +428,38 @@ import '../styles/global.css';
                 const errorText = await response.text();
                 throw new Error('HTTP ' + response.status + ': ' + errorText.substring(0, 100));
             }
-
             return await response.json();
         }
 
-        function updateStats() {
+        async function deleteRow(row, auth) {
+            const response = await fetch('/api/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    object: Number(row.object),
+                    _headers: auth
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error('HTTP ' + response.status + ': ' + errorText.substring(0, 100));
+            }
+            return await response.json();
+        }
+
+        function showDashboard(total) {
+            stats = { total: total, success: 0, error: 0, pending: total };
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('logContainer').innerHTML = '';
+            updateDashboard();
+        }
+
+        function updateDashboard() {
             document.getElementById('statTotal').textContent = stats.total;
             document.getElementById('statSuccess').textContent = stats.success;
             document.getElementById('statError').textContent = stats.error;
             document.getElementById('statPending').textContent = stats.pending;
-        }
-
-        function updateProgress() {
             const percent = Math.round(((stats.success + stats.error) / stats.total) * 100);
             document.getElementById('progressBar').style.width = percent + '%';
             document.getElementById('progressPercent').textContent = percent;
@@ -339,32 +467,15 @@ import '../styles/global.css';
 
         function addLog(type, message) {
             const logContainer = document.getElementById('logContainer');
-            const icons = {
-                success: '✅',
-                error: '❌',
-                pending: '⏳',
-                info: 'ℹ️'
-            };
-
+            const icons = { success: '✅', error: '❌', pending: '⏳', info: 'ℹ️' };
             const entry = document.createElement('div');
             entry.className = 'log-entry ' + type;
-            entry.innerHTML = '<span class="log-icon">' + icons[type] + '</span>' +
-                '<div class="log-content">' +
-                '<span class="log-time">' + new Date().toLocaleTimeString('id-ID') + '</span>' +
-                '<div class="log-message">' + message + '</div>' +
-                '</div>';
-
+            entry.innerHTML = '<span class="log-icon">' + icons[type] + '</span><div class="log-content"><span class="log-time">' + new Date().toLocaleTimeString('id-ID') + '</span><div class="log-message">' + message + '</div></div>';
             logContainer.appendChild(entry);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
-        function clearLogs() {
-            document.getElementById('logContainer').innerHTML = '';
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     </script>
 </body>
 </html>
