@@ -1,12 +1,13 @@
 // ==================== STATE ====================
 let currentTab = "upload";
 let uploadData = [];
+let hentiGunaData = [];
 let deleteData = [];
 let validasiData = [];
 let approveData = [];
 let stats = { total: 0, success: 0, error: 0, pending: 0 };
 
-// Fixed request body values for upload
+// Fixed request body values for upload (rusak-berat)
 const FIXED_BODY = {
     kodeJenisTransaksi: "203",
     statusPersetujuan: 1,
@@ -17,6 +18,20 @@ const FIXED_BODY = {
     tglPembukuan: "2025-12-30T17:00:00.000Z",
     tglDasarMutasi: "2025-12-30T17:00:00.000Z",
     noDasarMutasi: "SK NOMOR 77 TAHUN 2025"
+};
+
+// Fixed request body values for henti-guna
+const HENTI_GUNA_BODY = {
+    id: "",
+    tahunAnggaran: 2025,
+    tglPembukuan: "2025-12-30T17:00:00.000Z",
+    keterangan: "SK Penghentian Penggunaan",
+    kodeJenisTransaksi: "401",
+    noDasarMutasi: "SK NOMOR 77 TAHUN 2025",
+    tglDasarMutasi: "2025-12-30T17:00:00.000Z",
+    statusPersetujuan: 1,
+    periode: 13,
+    jenisDokumen: 31
 };
 
 // Hardcoded loginWrapper for validasi
@@ -107,6 +122,7 @@ const APPROVER_LOGIN_WRAPPER = {
 document.addEventListener("DOMContentLoaded", () => {
     setupTabs();
     setupUploadEvents();
+    setupHentiGunaEvents();
     setupDeleteEvents();
     setupValidasiEvents();
     setupApproveEvents();
@@ -257,6 +273,137 @@ async function uploadRow(row, auth) {
     });
 
     const response = await fetch("/api/proxy", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error("HTTP " + response.status + ": " + errorText.substring(0, 100));
+    }
+    return await response.json();
+}
+
+// ==================== HENTI-GUNA EVENTS ====================
+function setupHentiGunaEvents() {
+    const hentiGunaArea = document.getElementById("hentiGunaUploadArea");
+    const hentiGunaInput = document.getElementById("hentiGunaFileInput");
+
+    hentiGunaArea.addEventListener("click", () => hentiGunaInput.click());
+    hentiGunaInput.addEventListener("change", e => handleHentiGunaFile(e.target.files[0]));
+
+    hentiGunaArea.addEventListener("dragover", e => { e.preventDefault(); hentiGunaArea.classList.add("dragover"); });
+    hentiGunaArea.addEventListener("dragleave", () => hentiGunaArea.classList.remove("dragover"));
+    hentiGunaArea.addEventListener("drop", e => {
+        e.preventDefault();
+        hentiGunaArea.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) handleHentiGunaFile(e.dataTransfer.files[0]);
+    });
+
+    document.getElementById("startHentiGunaUpload").addEventListener("click", startBulkHentiGunaUpload);
+}
+
+function handleHentiGunaFile(file) {
+    if (!file || !file.name.match(/\.(xlsx|xls)$/i)) {
+        alert("Harap upload file Excel (.xlsx atau .xls)");
+        return;
+    }
+
+    document.getElementById("hentiGunaFileName").textContent = "📄 " + file.name;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+            if (jsonData.length === 0) { alert("File Excel kosong!"); return; }
+
+            const requiredCols = ["noSPPA", "kodeUakpb", "kodeBarang", "namaBarang", "noAwal", "noAkhir", "tglPerolehan"];
+            const missingCols = requiredCols.filter(col => !(col in jsonData[0]));
+            if (missingCols.length > 0) { alert("Kolom tidak ditemukan: " + missingCols.join(", ")); return; }
+
+            hentiGunaData = jsonData;
+            renderHentiGunaPreview();
+        } catch (error) {
+            alert("Gagal membaca file: " + error.message);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function renderHentiGunaPreview() {
+    const tbody = document.getElementById("hentiGunaPreviewBody");
+    tbody.innerHTML = "";
+    document.getElementById("hentiGunaDataCount").textContent = hentiGunaData.length;
+
+    hentiGunaData.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + (i + 1) + "</td><td>" + (row.noSPPA || "") + "</td><td>" + (row.kodeUakpb || "") + "</td><td>" + (row.kodeBarang || "") + "</td><td>" + (row.namaBarang || "") + "</td><td>" + (row.noAwal || "") + "</td><td>" + (row.noAkhir || "") + "</td><td>" + (row.tglPerolehan || "") + "</td>";
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById("hentiGunaPreviewSection").style.display = "block";
+}
+
+async function startBulkHentiGunaUpload() {
+    const auth = getAuthCredentials();
+    if (!auth) { alert("Harap isi semua field autentikasi!"); return; }
+    if (hentiGunaData.length === 0) { alert("Tidak ada data untuk diupload!"); return; }
+
+    showDashboard(hentiGunaData.length);
+    document.getElementById("startHentiGunaUpload").disabled = true;
+    document.getElementById("startHentiGunaUpload").textContent = "⏳ Uploading...";
+
+    addLog("info", "Memulai upload Henti-Guna " + hentiGunaData.length + " data...");
+
+    for (let i = 0; i < hentiGunaData.length; i++) {
+        const row = hentiGunaData[i];
+        addLog("pending", "[" + (i + 1) + "/" + hentiGunaData.length + "] Mengupload: " + row.kodeBarang + "...");
+
+        try {
+            await uploadHentiGunaRow(row, auth);
+            stats.success++;
+            addLog("success", "[" + (i + 1) + "/" + hentiGunaData.length + "] ✅ Sukses: " + row.kodeBarang);
+        } catch (error) {
+            stats.error++;
+            addLog("error", "[" + (i + 1) + "/" + hentiGunaData.length + "] ❌ Gagal: " + row.kodeBarang + " - " + error.message);
+        }
+
+        stats.pending--;
+        updateDashboard();
+        await sleep(100);
+    }
+
+    addLog("info", "Upload Henti-Guna selesai! Sukses: " + stats.success + ", Gagal: " + stats.error);
+    document.getElementById("startHentiGunaUpload").disabled = false;
+    document.getElementById("startHentiGunaUpload").textContent = "🚀 Mulai Upload Henti Guna";
+}
+
+async function uploadHentiGunaRow(row, auth) {
+    let tglPerolehan = row.tglPerolehan;
+    if (typeof tglPerolehan === "number") {
+        const excelEpoch = new Date(1899, 11, 30);
+        tglPerolehan = new Date(excelEpoch.getTime() + tglPerolehan * 86400000).toISOString();
+    } else if (typeof tglPerolehan === "string") {
+        tglPerolehan = new Date(tglPerolehan).toISOString();
+    }
+
+    const body = Object.assign({}, HENTI_GUNA_BODY, {
+        noSPPA: String(row.noSPPA),
+        kodeUakpb: String(row.kodeUakpb),
+        kodeBarang: String(row.kodeBarang),
+        namaBarang: String(row.namaBarang),
+        noAwal: Number(row.noAwal),
+        noAkhir: Number(row.noAkhir),
+        tglPerolehan: tglPerolehan,
+        createdDateTime: new Date().toISOString(),
+        _headers: auth
+    });
+
+    const response = await fetch("/api/henti-guna", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)

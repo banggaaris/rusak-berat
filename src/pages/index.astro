@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import AuthSection from "../components/AuthSection.astro";
 import UploadTab from "../components/UploadTab.astro";
+import UploadHentiGunaTab from "../components/UploadHentiGunaTab.astro";
 import DeleteTab from "../components/DeleteTab.astro";
 import ValidasiTab from "../components/ValidasiTab.astro";
 import ApproveTab from "../components/ApproveTab.astro";
@@ -27,7 +28,10 @@ import Dashboard from "../components/Dashboard.astro";
 
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab active" data-tab="upload">📤 Upload</button>
+                <button class="tab active" data-tab="upload"
+                    >📤 Rusak-Berat</button
+                >
+                <button class="tab" data-tab="hentiGuna">📤 Henti-Guna</button>
                 <button class="tab" data-tab="delete">🗑️ Delete</button>
                 <button class="tab" data-tab="validasi">✅ Validasi</button>
                 <button class="tab" data-tab="approve">👍 Approve</button>
@@ -38,6 +42,7 @@ import Dashboard from "../components/Dashboard.astro";
 
             <!-- Tab Contents -->
             <UploadTab />
+            <UploadHentiGunaTab />
             <DeleteTab />
             <ValidasiTab />
             <ApproveTab />
