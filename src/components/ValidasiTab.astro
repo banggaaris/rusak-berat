@@ -1,0 +1,72 @@
+---
+// Validasi Tab Component
+---
+
+<div id="validasiTab" class="tab-content">
+    <section class="card">
+        <h2>🔍 Cari Data Persetujuan</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="valKodeUakpb">Kode UAKPB</label>
+                <input
+                    type="text"
+                    id="valKodeUakpb"
+                    placeholder="Contoh: 143010199693521007KP"
+                />
+            </div>
+            <div class="form-group">
+                <label for="valCurrentPage">Page</label>
+                <input type="number" id="valCurrentPage" value="1" min="1" />
+            </div>
+            <div class="form-group">
+                <label for="valPageSize">Page Size</label>
+                <input
+                    type="number"
+                    id="valPageSize"
+                    value="10"
+                    min="1"
+                    max="100"
+                />
+            </div>
+        </div>
+        <button type="button" id="btnFetchData" class="btn-primary"
+            >🔍 Cari Data</button
+        >
+    </section>
+
+    <!-- Results Section -->
+    <section class="card" id="valResultsSection" style="display: none;">
+        <h2>
+            📋 Hasil Pencarian (<span id="valTotalCount">0</span> item, Page <span
+                id="valCurrentPageInfo">1</span
+            >/<span id="valPageCount">1</span>)
+        </h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="valSelectAll" /></th>
+                        <th>ID</th>
+                        <th>No SPPA</th>
+                        <th>Kode Barang</th>
+                        <th>Nama Barang</th>
+                        <th>No</th>
+                        <th>Tgl Perolehan</th>
+                    </tr>
+                </thead>
+                <tbody id="valResultsBody"></tbody>
+            </table>
+        </div>
+        <div class="btn-group">
+            <button type="button" id="btnValidate" class="btn-primary"
+                >✅ Validasi & Setujui (<span id="valSelectedCount">0</span> item)</button
+            >
+        </div>
+    </section>
+
+    <!-- Validation Status -->
+    <section class="card" id="valStatusSection" style="display: none;">
+        <h2>📊 Status Validasi</h2>
+        <div class="log-container" id="valLogContainer"></div>
+    </section>
+</div>

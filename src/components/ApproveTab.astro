@@ -1,0 +1,72 @@
+---
+// Approve Tab Component
+---
+
+<div id="approveTab" class="tab-content">
+    <section class="card">
+        <h2>🔍 Cari Data untuk Approve</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="aprKodeUakpb">Kode UAKPB</label>
+                <input
+                    type="text"
+                    id="aprKodeUakpb"
+                    placeholder="Contoh: 143010199693521007KP"
+                />
+            </div>
+            <div class="form-group">
+                <label for="aprCurrentPage">Page</label>
+                <input type="number" id="aprCurrentPage" value="1" min="1" />
+            </div>
+            <div class="form-group">
+                <label for="aprPageSize">Page Size</label>
+                <input
+                    type="number"
+                    id="aprPageSize"
+                    value="10"
+                    min="1"
+                    max="100"
+                />
+            </div>
+        </div>
+        <button type="button" id="btnFetchApprove" class="btn-primary"
+            >🔍 Cari Data</button
+        >
+    </section>
+
+    <!-- Results Section -->
+    <section class="card" id="aprResultsSection" style="display: none;">
+        <h2>
+            📋 Hasil Pencarian (<span id="aprTotalCount">0</span> item, Page <span
+                id="aprCurrentPageInfo">1</span
+            >/<span id="aprPageCount">1</span>)
+        </h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="aprSelectAll" /></th>
+                        <th>ID</th>
+                        <th>No SPPA</th>
+                        <th>Kode Barang</th>
+                        <th>Nama Barang</th>
+                        <th>No</th>
+                        <th>Tgl Perolehan</th>
+                    </tr>
+                </thead>
+                <tbody id="aprResultsBody"></tbody>
+            </table>
+        </div>
+        <div class="btn-group">
+            <button type="button" id="btnApprove" class="btn-success"
+                >✅ Approve (<span id="aprSelectedCount">0</span> item)</button
+            >
+        </div>
+    </section>
+
+    <!-- Approval Status -->
+    <section class="card" id="aprStatusSection" style="display: none;">
+        <h2>📊 Status Approval</h2>
+        <div class="log-container" id="aprLogContainer"></div>
+    </section>
+</div>

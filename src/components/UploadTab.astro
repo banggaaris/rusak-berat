@@ -1,0 +1,49 @@
+---
+// Upload Tab Component
+---
+
+<div id="uploadTab" class="tab-content active">
+    <section class="card upload-section">
+        <h2>📁 Upload Excel - Pengembangan</h2>
+        <p class="info-text">
+            Format Excel: <code>kodeUakpb</code>, <code>kodeBarang</code>, <code
+                >noAwal</code
+            >, <code>noAkhir</code>, <code>tglPerolehan</code>
+        </p>
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+            <div class="upload-icon">📤</div>
+            <p>
+                Drag & drop file Excel atau <span class="link"
+                    >klik untuk memilih</span>
+            </p>
+            <p class="file-name" id="fileName"></p>
+        </div>
+    </section>
+
+    <section
+        class="card preview-section"
+        id="previewSection"
+        style="display: none;"
+    >
+        <h2>📋 Preview Data (<span id="dataCount">0</span> baris)</h2>
+        <div class="table-container">
+            <table id="previewTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>kodeUakpb</th>
+                        <th>kodeBarang</th>
+                        <th>noAwal</th>
+                        <th>noAkhir</th>
+                        <th>tglPerolehan</th>
+                    </tr>
+                </thead>
+                <tbody id="previewBody"></tbody>
+            </table>
+        </div>
+        <button type="button" id="startUpload" class="btn-primary">
+            🚀 Mulai Upload
+        </button>
+    </section>
+</div>

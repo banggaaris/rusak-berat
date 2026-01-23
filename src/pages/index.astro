@@ -1,481 +1,58 @@
 ---
-import '../styles/global.css';
+import "../styles/global.css";
+import AuthSection from "../components/AuthSection.astro";
+import UploadTab from "../components/UploadTab.astro";
+import DeleteTab from "../components/DeleteTab.astro";
+import ValidasiTab from "../components/ValidasiTab.astro";
+import ApproveTab from "../components/ApproveTab.astro";
+import Dashboard from "../components/Dashboard.astro";
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAKTI Bulk Tool - Pengembangan Aset</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js" is:inline></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🚀 SAKTI Bulk Tool</h1>
-            <p class="subtitle">Pengembangan Aset Tetap</p>
-        </header>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SAKTI Bulk Tool - Pengembangan Aset</title>
+        <script
+            src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
+            is:inline></script>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>🚀 SAKTI Bulk Tool</h1>
+                <p class="subtitle">Pengembangan Aset Tetap</p>
+            </header>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab active" data-tab="upload">📤 Upload Pengembangan</button>
-            <button class="tab" data-tab="delete">🗑️ Delete Pengembangan</button>
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="upload">📤 Upload</button>
+                <button class="tab" data-tab="delete">🗑️ Delete</button>
+                <button class="tab" data-tab="validasi">✅ Validasi</button>
+                <button class="tab" data-tab="approve">👍 Approve</button>
+            </div>
+
+            <!-- Auth Section -->
+            <AuthSection />
+
+            <!-- Tab Contents -->
+            <UploadTab />
+            <DeleteTab />
+            <ValidasiTab />
+            <ApproveTab />
+
+            <!-- Dashboard -->
+            <Dashboard />
+
+            <footer>
+                <p>
+                    ⚠️ Pastikan Anda sudah login di SAKTI sebelum menggunakan
+                    tool ini
+                </p>
+            </footer>
         </div>
 
-        <!-- Auth Section -->
-        <section class="card auth-section">
-            <h2>🔐 Autentikasi</h2>
-            <div class="form-group">
-                <label for="sessionId">SAKTI_SESSION_ID</label>
-                <input type="text" id="sessionId" placeholder="Paste session ID dari browser...">
-            </div>
-            <div class="form-group">
-                <label for="tokenId">SAKTI_TOKEN_ID</label>
-                <input type="text" id="tokenId" placeholder="Paste token ID dari browser...">
-            </div>
-            <div class="form-group">
-                <label for="timestamp">SAKTI_TIMESTAMP</label>
-                <div class="input-with-btn">
-                    <input type="text" id="timestamp" placeholder="Timestamp akan digenerate otomatis">
-                    <button type="button" id="generateTimestamp" class="btn-secondary">Generate</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Upload Tab Content -->
-        <div id="uploadTab" class="tab-content active">
-            <section class="card upload-section">
-                <h2>📁 Upload Excel - Pengembangan</h2>
-                <p class="info-text">Format Excel: <code>kodeUakpb</code>, <code>kodeBarang</code>, <code>noAwal</code>, <code>noAkhir</code>, <code>tglPerolehan</code></p>
-                <div class="upload-area" id="uploadArea">
-                    <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
-                    <div class="upload-icon">📤</div>
-                    <p>Drag & drop file Excel atau <span class="link">klik untuk memilih</span></p>
-                    <p class="file-name" id="fileName"></p>
-                </div>
-            </section>
-
-            <section class="card preview-section" id="previewSection" style="display: none;">
-                <h2>📋 Preview Data (<span id="dataCount">0</span> baris)</h2>
-                <div class="table-container">
-                    <table id="previewTable">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>kodeUakpb</th>
-                                <th>kodeBarang</th>
-                                <th>noAwal</th>
-                                <th>noAkhir</th>
-                                <th>tglPerolehan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewBody"></tbody>
-                    </table>
-                </div>
-                <button type="button" id="startUpload" class="btn-primary">
-                    🚀 Mulai Upload
-                </button>
-            </section>
-        </div>
-
-        <!-- Delete Tab Content -->
-        <div id="deleteTab" class="tab-content">
-            <section class="card upload-section">
-                <h2>📁 Upload Excel - Delete</h2>
-                <p class="info-text">Format Excel: <code>object</code> (ID object yang akan dihapus)</p>
-                <div class="upload-area" id="deleteUploadArea">
-                    <input type="file" id="deleteFileInput" accept=".xlsx,.xls" hidden>
-                    <div class="upload-icon">🗑️</div>
-                    <p>Drag & drop file Excel atau <span class="link">klik untuk memilih</span></p>
-                    <p class="file-name" id="deleteFileName"></p>
-                </div>
-            </section>
-
-            <section class="card preview-section" id="deletePreviewSection" style="display: none;">
-                <h2>📋 Preview Data (<span id="deleteDataCount">0</span> baris)</h2>
-                <div class="table-container">
-                    <table id="deletePreviewTable">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>object</th>
-                            </tr>
-                        </thead>
-                        <tbody id="deletePreviewBody"></tbody>
-                    </table>
-                </div>
-                <button type="button" id="startDelete" class="btn-danger">
-                    🗑️ Mulai Delete
-                </button>
-            </section>
-        </div>
-
-        <!-- Progress Dashboard -->
-        <section class="card dashboard-section" id="dashboardSection" style="display: none;">
-            <h2>📊 Dashboard Progress</h2>
-            <div class="progress-summary">
-                <div class="stat-box">
-                    <span class="stat-label">Total</span>
-                    <span class="stat-value" id="statTotal">0</span>
-                </div>
-                <div class="stat-box success">
-                    <span class="stat-label">Sukses</span>
-                    <span class="stat-value" id="statSuccess">0</span>
-                </div>
-                <div class="stat-box error">
-                    <span class="stat-label">Gagal</span>
-                    <span class="stat-value" id="statError">0</span>
-                </div>
-                <div class="stat-box pending">
-                    <span class="stat-label">Pending</span>
-                    <span class="stat-value" id="statPending">0</span>
-                </div>
-            </div>
-            <div class="progress-bar-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <p class="progress-text"><span id="progressPercent">0</span>% selesai</p>
-            
-            <div class="log-container" id="logContainer"></div>
-        </section>
-
-        <footer>
-            <p>⚠️ Pastikan Anda sudah login di SAKTI sebelum menggunakan tool ini</p>
-        </footer>
-    </div>
-
-    <script is:inline>
-        // State
-        let currentTab = 'upload';
-        let uploadData = [];
-        let deleteData = [];
-        let stats = { total: 0, success: 0, error: 0, pending: 0 };
-
-        // Fixed request body values for upload
-        const FIXED_BODY = {
-            kodeJenisTransaksi: "203",
-            statusPersetujuan: 1,
-            dasarHarga: 1,
-            periode: 13,
-            kodeKondisi: 3,
-            tahunAnggaran: 2025,
-            tglPembukuan: "2025-12-30T17:00:00.000Z",
-            tglDasarMutasi: "2025-12-30T17:00:00.000Z",
-            noDasarMutasi: "SK NOMOR 77 TAHUN 2025"
-        };
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            setupTabs();
-            setupUploadEvents();
-            setupDeleteEvents();
-            generateNewTimestamp();
-        });
-
-        // Tab switching
-        function setupTabs() {
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentTab = tab.dataset.tab;
-                    document.getElementById(currentTab + 'Tab').classList.add('active');
-                });
-            });
-        }
-
-        // Upload Events
-        function setupUploadEvents() {
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-
-            uploadArea.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', (e) => handleUploadFile(e.target.files[0]));
-            
-            uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length > 0) handleUploadFile(e.dataTransfer.files[0]);
-            });
-
-            document.getElementById('generateTimestamp').addEventListener('click', generateNewTimestamp);
-            document.getElementById('startUpload').addEventListener('click', startBulkUpload);
-        }
-
-        // Delete Events
-        function setupDeleteEvents() {
-            const deleteArea = document.getElementById('deleteUploadArea');
-            const deleteInput = document.getElementById('deleteFileInput');
-
-            deleteArea.addEventListener('click', () => deleteInput.click());
-            deleteInput.addEventListener('change', (e) => handleDeleteFile(e.target.files[0]));
-            
-            deleteArea.addEventListener('dragover', (e) => { e.preventDefault(); deleteArea.classList.add('dragover'); });
-            deleteArea.addEventListener('dragleave', () => deleteArea.classList.remove('dragover'));
-            deleteArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                deleteArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length > 0) handleDeleteFile(e.dataTransfer.files[0]);
-            });
-
-            document.getElementById('startDelete').addEventListener('click', startBulkDelete);
-        }
-
-        function generateNewTimestamp() {
-            document.getElementById('timestamp').value = Date.now().toString();
-        }
-
-        // Handle Upload File
-        function handleUploadFile(file) {
-            if (!file || !file.name.match(/\.(xlsx|xls)$/i)) {
-                alert('Harap upload file Excel (.xlsx atau .xls)');
-                return;
-            }
-
-            document.getElementById('fileName').textContent = '📄 ' + file.name;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-
-                    if (jsonData.length === 0) { alert('File Excel kosong!'); return; }
-
-                    const requiredCols = ['kodeUakpb', 'kodeBarang', 'noAwal', 'noAkhir', 'tglPerolehan'];
-                    const missingCols = requiredCols.filter(col => !(col in jsonData[0]));
-                    if (missingCols.length > 0) { alert('Kolom tidak ditemukan: ' + missingCols.join(', ')); return; }
-
-                    uploadData = jsonData;
-                    renderUploadPreview();
-                } catch (error) {
-                    alert('Gagal membaca file: ' + error.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        // Handle Delete File
-        function handleDeleteFile(file) {
-            if (!file || !file.name.match(/\.(xlsx|xls)$/i)) {
-                alert('Harap upload file Excel (.xlsx atau .xls)');
-                return;
-            }
-
-            document.getElementById('deleteFileName').textContent = '📄 ' + file.name;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-
-                    if (jsonData.length === 0) { alert('File Excel kosong!'); return; }
-                    if (!('object' in jsonData[0])) { alert('Kolom "object" tidak ditemukan!'); return; }
-
-                    deleteData = jsonData;
-                    renderDeletePreview();
-                } catch (error) {
-                    alert('Gagal membaca file: ' + error.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function renderUploadPreview() {
-            const tbody = document.getElementById('previewBody');
-            tbody.innerHTML = '';
-            document.getElementById('dataCount').textContent = uploadData.length;
-
-            uploadData.forEach((row, i) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + (row.kodeUakpb || '') + '</td><td>' + (row.kodeBarang || '') + '</td><td>' + (row.noAwal || '') + '</td><td>' + (row.noAkhir || '') + '</td><td>' + (row.tglPerolehan || '') + '</td>';
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('previewSection').style.display = 'block';
-        }
-
-        function renderDeletePreview() {
-            const tbody = document.getElementById('deletePreviewBody');
-            tbody.innerHTML = '';
-            document.getElementById('deleteDataCount').textContent = deleteData.length;
-
-            deleteData.forEach((row, i) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + (row.object || '') + '</td>';
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('deletePreviewSection').style.display = 'block';
-        }
-
-        function getAuthCredentials() {
-            const sessionId = document.getElementById('sessionId').value.trim();
-            const tokenId = document.getElementById('tokenId').value.trim();
-            const timestamp = document.getElementById('timestamp').value.trim();
-            if (!sessionId || !tokenId || !timestamp) return null;
-            return { sessionId, tokenId, timestamp };
-        }
-
-        // Bulk Upload
-        async function startBulkUpload() {
-            const auth = getAuthCredentials();
-            if (!auth) { alert('Harap isi semua field autentikasi!'); return; }
-            if (uploadData.length === 0) { alert('Tidak ada data untuk diupload!'); return; }
-
-            showDashboard(uploadData.length);
-            document.getElementById('startUpload').disabled = true;
-            document.getElementById('startUpload').textContent = '⏳ Uploading...';
-
-            addLog('info', 'Memulai upload ' + uploadData.length + ' data...');
-
-            for (let i = 0; i < uploadData.length; i++) {
-                const row = uploadData[i];
-                addLog('pending', '[' + (i + 1) + '/' + uploadData.length + '] Mengupload: ' + row.kodeBarang + '...');
-
-                try {
-                    await uploadRow(row, auth);
-                    stats.success++;
-                    addLog('success', '[' + (i + 1) + '/' + uploadData.length + '] ✅ Sukses: ' + row.kodeBarang);
-                } catch (error) {
-                    stats.error++;
-                    addLog('error', '[' + (i + 1) + '/' + uploadData.length + '] ❌ Gagal: ' + row.kodeBarang + ' - ' + error.message);
-                }
-
-                stats.pending--;
-                updateDashboard();
-                await sleep(100);
-            }
-
-            addLog('info', 'Upload selesai! Sukses: ' + stats.success + ', Gagal: ' + stats.error);
-            document.getElementById('startUpload').disabled = false;
-            document.getElementById('startUpload').textContent = '🚀 Mulai Upload';
-        }
-
-        // Bulk Delete
-        async function startBulkDelete() {
-            const auth = getAuthCredentials();
-            if (!auth) { alert('Harap isi semua field autentikasi!'); return; }
-            if (deleteData.length === 0) { alert('Tidak ada data untuk dihapus!'); return; }
-
-            // Confirm once before starting
-            if (!confirm('⚠️ PERINGATAN!\n\nAnda akan menghapus ' + deleteData.length + ' data.\nAksi ini tidak dapat dibatalkan.\n\nLanjutkan?')) {
-                return;
-            }
-
-            showDashboard(deleteData.length);
-            document.getElementById('startDelete').disabled = true;
-            document.getElementById('startDelete').textContent = '⏳ Deleting...';
-
-            addLog('info', 'Memulai delete ' + deleteData.length + ' data...');
-
-            for (let i = 0; i < deleteData.length; i++) {
-                const row = deleteData[i];
-                addLog('pending', '[' + (i + 1) + '/' + deleteData.length + '] Menghapus object: ' + row.object + '...');
-
-                try {
-                    await deleteRow(row, auth);
-                    stats.success++;
-                    addLog('success', '[' + (i + 1) + '/' + deleteData.length + '] ✅ Sukses hapus: ' + row.object);
-                } catch (error) {
-                    stats.error++;
-                    addLog('error', '[' + (i + 1) + '/' + deleteData.length + '] ❌ Gagal: ' + row.object + ' - ' + error.message);
-                }
-
-                stats.pending--;
-                updateDashboard();
-                await sleep(100);
-            }
-
-            addLog('info', 'Delete selesai! Sukses: ' + stats.success + ', Gagal: ' + stats.error);
-            document.getElementById('startDelete').disabled = false;
-            document.getElementById('startDelete').textContent = '🗑️ Mulai Delete';
-        }
-
-        async function uploadRow(row, auth) {
-            let tglPerolehan = row.tglPerolehan;
-            if (typeof tglPerolehan === 'number') {
-                const excelEpoch = new Date(1899, 11, 30);
-                tglPerolehan = new Date(excelEpoch.getTime() + tglPerolehan * 86400000).toISOString();
-            } else if (typeof tglPerolehan === 'string') {
-                tglPerolehan = new Date(tglPerolehan).toISOString();
-            }
-
-            const body = Object.assign({}, FIXED_BODY, {
-                kodeUakpb: String(row.kodeUakpb),
-                kodeBarang: String(row.kodeBarang),
-                noAwal: Number(row.noAwal),
-                noAkhir: Number(row.noAkhir),
-                tglPerolehan: tglPerolehan,
-                createdDateTime: new Date().toISOString(),
-                _headers: auth
-            });
-
-            const response = await fetch('/api/proxy', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error('HTTP ' + response.status + ': ' + errorText.substring(0, 100));
-            }
-            return await response.json();
-        }
-
-        async function deleteRow(row, auth) {
-            const response = await fetch('/api/delete', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    object: Number(row.object),
-                    _headers: auth
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error('HTTP ' + response.status + ': ' + errorText.substring(0, 100));
-            }
-            return await response.json();
-        }
-
-        function showDashboard(total) {
-            stats = { total: total, success: 0, error: 0, pending: total };
-            document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('logContainer').innerHTML = '';
-            updateDashboard();
-        }
-
-        function updateDashboard() {
-            document.getElementById('statTotal').textContent = stats.total;
-            document.getElementById('statSuccess').textContent = stats.success;
-            document.getElementById('statError').textContent = stats.error;
-            document.getElementById('statPending').textContent = stats.pending;
-            const percent = Math.round(((stats.success + stats.error) / stats.total) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressPercent').textContent = percent;
-        }
-
-        function addLog(type, message) {
-            const logContainer = document.getElementById('logContainer');
-            const icons = { success: '✅', error: '❌', pending: '⏳', info: 'ℹ️' };
-            const entry = document.createElement('div');
-            entry.className = 'log-entry ' + type;
-            entry.innerHTML = '<span class="log-icon">' + icons[type] + '</span><div class="log-content"><span class="log-time">' + new Date().toLocaleTimeString('id-ID') + '</span><div class="log-message">' + message + '</div></div>';
-            logContainer.appendChild(entry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-
-        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-    </script>
-</body>
+        <script src="/scripts/app.js" is:inline></script>
+    </body>
 </html>
