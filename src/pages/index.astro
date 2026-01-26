@@ -1,16 +1,10 @@
 ---
 import "../styles/global.css";
-import AuthSection from "../components/AuthSection.astro";
-import UploadTab from "../components/UploadTab.astro";
-import UploadHentiGunaTab from "../components/UploadHentiGunaTab.astro";
-import DeleteTab from "../components/DeleteTab.astro";
-import ValidasiTab from "../components/ValidasiTab.astro";
-import ApproveTab from "../components/ApproveTab.astro";
-import Dashboard from "../components/Dashboard.astro";
+import { App } from "../components/App";
 ---
 
 <!doctype html>
-<html lang="id">
+<html lang="id" class="dark">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,44 +14,6 @@ import Dashboard from "../components/Dashboard.astro";
             is:inline></script>
     </head>
     <body>
-        <div class="container">
-            <header>
-                <h1>🚀 SAKTI Bulk Tool</h1>
-                <p class="subtitle">Pengembangan Aset Tetap</p>
-            </header>
-
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" data-tab="upload"
-                    >📤 Rusak-Berat</button
-                >
-                <button class="tab" data-tab="hentiGuna">📤 Henti-Guna</button>
-                <button class="tab" data-tab="delete">🗑️ Delete</button>
-                <button class="tab" data-tab="validasi">✅ Validasi</button>
-                <button class="tab" data-tab="approve">👍 Approve</button>
-            </div>
-
-            <!-- Auth Section -->
-            <AuthSection />
-
-            <!-- Tab Contents -->
-            <UploadTab />
-            <UploadHentiGunaTab />
-            <DeleteTab />
-            <ValidasiTab />
-            <ApproveTab />
-
-            <!-- Dashboard -->
-            <Dashboard />
-
-            <footer>
-                <p>
-                    ⚠️ Pastikan Anda sudah login di SAKTI sebelum menggunakan
-                    tool ini
-                </p>
-            </footer>
-        </div>
-
-        <script src="/scripts/app.js" is:inline></script>
+        <App client:load />
     </body>
 </html>
