@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Stepper } from "@/components/ui/stepper"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { PageHeader } from "@/components/PageHeader"
+import { LoadingOverlay } from "@/components/LoadingOverlay"
 import { toast } from "sonner"
-import { Search, CheckCircle, Play } from "lucide-react"
+import { Search, CheckCircle, Play, ThumbsUp } from "lucide-react"
 
 const APPROVER_LOGIN_WRAPPER = {
     dekon2: "KP",
@@ -73,6 +75,8 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
     const [data, setData] = React.useState<DataItem[]>([])
     const [selected, setSelected] = React.useState<number[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
+    const [busy, setBusy] = React.useState(false)
+    const [busyMsg, setBusyMsg] = React.useState("Memproses...")
 
     const searchData = async () => {
         if (!kodeUakpb) {
@@ -85,6 +89,8 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
         }
 
         setIsLoading(true)
+        setBusyMsg("Mencari data...")
+        setBusy(true)
         try {
             const response = await fetch("/api/find-approve", {
                 method: "POST",
@@ -107,8 +113,10 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
             }
         } catch (error) {
             toast.error("Gagal mencari data")
+        } finally {
+            setIsLoading(false)
+            setBusy(false)
         }
-        setIsLoading(false)
     }
 
     const toggleSelect = (id: number) => {
@@ -132,6 +140,8 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
         }
 
         setCurrentStep(2)
+        setBusyMsg("Memproses approval...")
+        setBusy(true)
         const selectedItems = data
             .filter((d) => selected.includes(d.id))
             .map((item) => ({
@@ -175,6 +185,8 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
             }
         } catch (error) {
             toast.error("Error: " + String(error))
+        } finally {
+            setBusy(false)
         }
     }
 
@@ -186,6 +198,12 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
 
     return (
         <div className="space-y-6">
+            <LoadingOverlay show={busy} message={busyMsg} />
+            <PageHeader
+                icon={ThumbsUp}
+                title="Approve"
+                description="Cari dan setujui (approve) data persetujuan aset"
+            />
             <Stepper steps={steps} currentStep={currentStep} />
 
             {currentStep === 0 && (
@@ -229,7 +247,7 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
                         <CardTitle>📋 Pilih Item ({selected.length}/{data.length})</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="max-h-[400px] overflow-auto rounded-md border">
+                        <div className="max-h-100 overflow-auto rounded-md border">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -288,7 +306,7 @@ export function ApproveFlow({ auth }: ApproveFlowProps) {
             {currentStep === 3 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-green-500">
+                        <CardTitle className="flex items-center gap-2 text-foreground">
                             <CheckCircle className="w-5 h-5" />
                             Approval Selesai!
                         </CardTitle>

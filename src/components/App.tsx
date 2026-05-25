@@ -1,15 +1,14 @@
 import * as React from "react"
 import { Header } from "@/components/Header"
 import { AuthForm } from "@/components/AuthForm"
-import { UploadRusakBerat } from "@/components/UploadRusakBerat"
-import { UploadHentiGuna } from "@/components/UploadHentiGuna"
+import { BulkUpload } from "@/components/BulkUpload"
 import { DeleteFlow } from "@/components/DeleteFlow"
 import { ValidasiFlow } from "@/components/ValidasiFlow"
 import { ApproveFlow } from "@/components/ApproveFlow"
 import { Toaster } from "@/components/ui/sonner"
 
 export function App() {
-    const [activeTab, setActiveTab] = React.useState("rusak-berat")
+    const [activeTab, setActiveTab] = React.useState("upload")
     const [sessionId, setSessionId] = React.useState("")
     const [tokenId, setTokenId] = React.useState("")
     const [timestamp, setTimestamp] = React.useState(Date.now().toString())
@@ -35,8 +34,7 @@ export function App() {
                     onGenerateTimestamp={generateTimestamp}
                 />
 
-                {activeTab === "rusak-berat" && <UploadRusakBerat auth={auth} />}
-                {activeTab === "henti-guna" && <UploadHentiGuna auth={auth} />}
+                {activeTab === "upload" && <BulkUpload auth={auth} />}
                 {activeTab === "delete" && <DeleteFlow auth={auth} />}
                 {activeTab === "validasi" && <ValidasiFlow auth={auth} />}
                 {activeTab === "approve" && <ApproveFlow auth={auth} />}
@@ -46,7 +44,7 @@ export function App() {
                 </footer>
             </main>
 
-            <Toaster richColors position="top-right" />
+            <Toaster position="top-right" />
         </div>
     )
 }

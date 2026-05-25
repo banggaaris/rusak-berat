@@ -6,7 +6,10 @@ import { Progress } from "@/components/ui/progress"
 import { Stepper } from "@/components/ui/stepper"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "sonner"
-import { Upload, Trash2, Play, CheckCircle } from "lucide-react"
+import { PageHeader } from "@/components/PageHeader"
+import { LoadingOverlay } from "@/components/LoadingOverlay"
+import { Upload, Trash2, CheckCircle, Download } from "lucide-react"
+import { parseExcelFile, processRows, downloadExcelTemplate } from "@/lib/excel"
 
 interface DeleteFlowProps {
     auth: { sessionId: string; tokenId: string; timestamp: string }
@@ -24,42 +27,31 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
     const [fileName, setFileName] = React.useState("")
     const [progress, setProgress] = React.useState(0)
     const [stats, setStats] = React.useState({ success: 0, error: 0 })
+    const [busy, setBusy] = React.useState(false)
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-    const handleFileUpload = (file: File) => {
-        if (!file.name.match(/\.(xlsx|xls)$/i)) {
-            toast.error("Format file tidak valid")
+    const handleFileUpload = async (file: File) => {
+        const result = await parseExcelFile<RowData>(file, ["object"])
+        if (!result.ok) {
+            toast.error(result.error.title, result.error.description ? { description: result.error.description } : undefined)
             return
         }
 
         setFileName(file.name)
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            try {
-                const arrayBuffer = e.target?.result as ArrayBuffer
-                const uint8Array = new Uint8Array(arrayBuffer)
-                // @ts-ignore
-                const workbook = XLSX.read(uint8Array, { type: "array" })
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])
+        setData(result.rows)
+        setCurrentStep(1)
+        toast.success(`${result.rows.length} data ditemukan`)
+    }
 
-                if (jsonData.length === 0) {
-                    toast.error("File kosong")
-                    return
-                }
-
-                if (!("object" in jsonData[0])) {
-                    toast.error("Kolom 'object' tidak ditemukan")
-                    return
-                }
-
-                setData(jsonData as RowData[])
-                setCurrentStep(1)
-                toast.success(`${jsonData.length} data ditemukan`)
-            } catch (error) {
-                toast.error("Gagal membaca file")
-            }
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        if (e.dataTransfer.files.length > 0) {
+            handleFileUpload(e.dataTransfer.files[0])
         }
-        reader.readAsArrayBuffer(file)
+    }
+
+    const downloadTemplate = () => {
+        downloadExcelTemplate("template-delete.xlsx", ["object"], { object: 123456 })
     }
 
     const startDelete = async () => {
@@ -71,38 +63,33 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
         setCurrentStep(2)
         setProgress(0)
         setStats({ success: 0, error: 0 })
+        setBusy(true)
 
-        let successCount = 0
-        let errorCount = 0
-
-        for (let i = 0; i < data.length; i++) {
-            const row = data[i]
-            try {
-                const response = await fetch("/api/delete", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        object: Number(row.object),
-                        _headers: auth
+        try {
+            const { success, error } = await processRows(
+                data,
+                async (row) => {
+                    const response = await fetch("/api/delete", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            object: Number(row.object),
+                            _headers: auth
+                        })
                     })
-                })
-
-                if (response.ok) {
-                    successCount++
-                } else {
-                    errorCount++
+                    return response.ok
+                },
+                (p, s, e) => {
+                    setProgress(p)
+                    setStats({ success: s, error: e })
                 }
-            } catch {
-                errorCount++
-            }
+            )
 
-            setProgress(Math.round(((i + 1) / data.length) * 100))
-            setStats({ success: successCount, error: errorCount })
-            await new Promise((r) => setTimeout(r, 100))
+            setCurrentStep(3)
+            toast.success("Delete selesai!", { description: `Sukses: ${success}, Gagal: ${error}` })
+        } finally {
+            setBusy(false)
         }
-
-        setCurrentStep(3)
-        toast.success("Delete selesai!", { description: `Sukses: ${successCount}, Gagal: ${errorCount}` })
     }
 
     const reset = () => {
@@ -115,6 +102,12 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
 
     return (
         <div className="space-y-6">
+            <LoadingOverlay show={busy} message={`Menghapus data... ${progress}%`} />
+            <PageHeader
+                icon={Trash2}
+                title="Delete Transaksi"
+                description="Hapus transaksi aset berdasarkan Object ID"
+            />
             <Stepper steps={steps} currentStep={currentStep} />
 
             {currentStep === 0 && (
@@ -126,12 +119,20 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Format: <code className="bg-muted px-1 rounded">object</code> (ID transaksi)
-                        </p>
+                        <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+                            <p className="text-sm text-muted-foreground">
+                                Format: <code className="bg-muted px-1 rounded">object</code> (ID transaksi)
+                            </p>
+                            <Button variant="outline" size="sm" onClick={downloadTemplate} className="shrink-0">
+                                <Download className="w-4 h-4 mr-2" />
+                                Download Template
+                            </Button>
+                        </div>
                         <div
                             className="border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:border-destructive transition-colors"
                             onClick={() => fileInputRef.current?.click()}
+                            onDrop={handleDrop}
+                            onDragOver={(e) => e.preventDefault()}
                         >
                             <Input
                                 ref={fileInputRef}
@@ -141,7 +142,7 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
                                 onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                             />
                             <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground">Klik untuk upload file Excel</p>
+                            <p className="text-muted-foreground">Drag &amp; drop file Excel atau klik untuk memilih</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -153,7 +154,7 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
                         <CardTitle>📋 Preview ({data.length} data) - {fileName}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="max-h-[400px] overflow-auto rounded-md border">
+                        <div className="max-h-100 overflow-auto rounded-md border">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -189,8 +190,8 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
                         <Progress value={progress} className="h-3" />
                         <div className="flex justify-between text-sm">
                             <span>{progress}%</span>
-                            <span className="text-green-500">✅ {stats.success}</span>
-                            <span className="text-red-500">❌ {stats.error}</span>
+                            <span className="text-foreground">✅ {stats.success}</span>
+                            <span className="text-muted-foreground">❌ {stats.error}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -199,19 +200,19 @@ export function DeleteFlow({ auth }: DeleteFlowProps) {
             {currentStep === 3 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-green-500">
+                        <CardTitle className="flex items-center gap-2 text-foreground">
                             <CheckCircle className="w-5 h-5" />
                             Delete Selesai!
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-green-500/10 rounded-lg p-4 text-center">
-                                <div className="text-3xl font-bold text-green-500">{stats.success}</div>
+                            <div className="bg-muted rounded-lg p-4 text-center">
+                                <div className="text-3xl font-bold text-foreground">{stats.success}</div>
                                 <div className="text-sm">Sukses</div>
                             </div>
-                            <div className="bg-red-500/10 rounded-lg p-4 text-center">
-                                <div className="text-3xl font-bold text-red-500">{stats.error}</div>
+                            <div className="bg-muted rounded-lg p-4 text-center border border-border">
+                                <div className="text-3xl font-bold text-muted-foreground">{stats.error}</div>
                                 <div className="text-sm">Gagal</div>
                             </div>
                         </div>
